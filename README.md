@@ -4,8 +4,11 @@ or by provinding with a txt file.
 
 # TODOs
 
-- [ ] make port scanning faster.
+- [x] make port scanning faster.
 - [ ] Add service detection.
 - [ ] include output support.
 - [ ] include SYN only scan.
 - [ ] create a man page.
+- [ ] CIDR support (192.168.1.0/24)
+- [ ] result savings.
+- [ ] modify the port scanner to only scan for ports attackers are looking for.
