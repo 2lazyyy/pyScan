@@ -1,52 +1,44 @@
 import sys
 import os
-import socket
+import asyncio
 
-def scan_portTCP(ip, port):
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    sock.settimeout(1)
+async def scan(host, port):
     try:
-        result = sock.connect_ex((ip, port))
-        if result == 0:
-            print(f"{ip}:{port} OPEN")
-        sock.close()
-    except socket.error:
-        pass
-    finally:
-        sock.close()
+        reader, writer = await asyncio.wait_for(
+            asyncio.open_connection(host, port),
+            timeout=0.5
+        )
+        writer.close()
+        await writer.wait_closed()
+        return port
+    except (asyncio.TimeoutError, OSError):
+        return None
 
+async def scan_host(host):
+    ports = range(1, 1001)
+    tasks = [scan(host, p) for p in ports]
+    results = await asyncio.gather(*tasks)
+    open_ports = [p for p in results if p]
+    print(f"{host}: {open_ports}")
 
-def main():
-    
+async def main():
     if len(sys.argv) != 2:
         print("Usage: python script.py <file | ip | domain>")
         sys.exit(1)
-    
-    host = sys.argv[1]
-    start_port = 1
-    end_port = 1000
 
-    if os.path.isfile(host):
-        with open(host, 'r') as f:
+    input_arg = sys.argv[1]   # filename OR host
+
+    if os.path.isfile(input_arg):
+        # File can be named ANYTHING
+        with open(input_arg, "r") as f:
             for line in f:
-                target = line.strip()
-                if not target:
-                    continue
-
-                print(f"Scanning ports on {target} ...")
-                for port in range(start_port, end_port + 1):
-                    scan_portTCP(target, port)
-
-
+                host = line.strip()
+                if host:
+                    await scan_host(host)
     else:
-        print(f"Scanning ports on {host} ...")
-        for port in range(start_port, end_port + 1):
-            scan_portTCP(host, port)
-
-
+        host = input_arg
+        await scan_host(host)
 
 if __name__ == "__main__":
-    main()
-
-
+    asyncio.run(main())
 
